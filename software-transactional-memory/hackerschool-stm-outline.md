@@ -26,11 +26,29 @@ Software Transactional Memory is an approach to allow the user to ignore race co
 
 Clojure has no variables. Clojure has no mutable data. We'll be talking about STM as implemented in clojure---a way to modify references to immutable data. Important because *once you have some data, it will never change under you*. The STM will control how *references* to this immutable data are allowed to change
 
-    (def r (ref 0))
-    (alter r inc)                  => error!
-    (dosync (alter r inc))    => success!
-    @r                              => @r is now 1
+    (def r1 (ref 0))
+    (def r2 (ref 100))
+    (alter r1 inc)                  => error!
+    (dosync 
+        (alter r1 inc)
+        (alter r2 dec))   
+                                   => @r1 is now 1, r2 is now 99
     
+
+    r1 = Ref(0, None)
+    r2 = Ref(100, None)
+
+    def body():
+        r1.refSet(5)
+
+        def incr(val):
+            return val + 1
+        
+        r2.alter(incr, [])
+
+    LockingTransaction.runInTransaction(body)
+    r1.get() == 5
+    r2.get() == 101
 
 #### Transactions
 
@@ -69,10 +87,34 @@ can only *set* a ref to something new with refSet/alter/commute---and they _chec
     * _takeOwnership (associates a ref w/ this transaction---sets tinfo on the ref)
     * _doSet (show how it's very simple: takes ownership, saves value)
 
+
+## Tests
+
+How to test multithreaded code?
+
+Question: Should the tests be in clojure or in python?
+
+Show running_transaction contextmanager in ref-tests.py
+
+Show how we have fine grained control over two threads: Communicating with threading.Event. Sort of like a traffic light for each thread, and we can tell each to go only at a certain point
+
+# Problems
+
 ## Overhead
 
-No free lunch (unless we're at Etsy). All this nifty code we've seen causes a performance impact. 
+No free lunch (unless we're at Etsy). All this nifty code we've seen causes a performance impact. Not a magic bullet---talk about recent thread on clojure list re: not many realplife uses of STM so far it seems. 
+
+## Tuning
+
+history chain
+ensure
+commute
+faults
+
+## Leaky abstraction
+
+consistent snapshot of the world breaks down if your history chain is too short and lots of updates push what you want past it
 
 # Conclusion / extra questions
 
-* can anyone tell me why clojure's immutable data is required for this STM system to work?
+Can anyone tell me why clojure's immutable data is required for this STM system to work?
