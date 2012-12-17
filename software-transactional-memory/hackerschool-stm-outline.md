@@ -69,6 +69,10 @@ can only *set* a ref to something new with refSet/alter/commute---and they _chec
     * _takeOwnership (associates a ref w/ this transaction---sets tinfo on the ref)
     * _doSet (show how it's very simple: takes ownership, saves value)
 
+## Overhead
+
+No free lunch (unless we're at Etsy). All this nifty code we've seen causes a performance impact. 
+
 # Conclusion / extra questions
 
 * can anyone tell me why clojure's immutable data is required for this STM system to work?
