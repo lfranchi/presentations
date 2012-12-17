@@ -2,6 +2,8 @@
 
 ## Difficulties of multithreaded programming
 
+What is threading: quick intro. What this talk is about: how to *share state* between concurrently executing threads.
+
 ### Deadlocks, Livelocks
 
 Two threads, each waiting on each other to finish something, so neither are able to make any progress either by waiting or spinning.
@@ -28,28 +30,12 @@ Clojure has no variables. Clojure has no mutable data. We'll be talking about ST
 
     (def r1 (ref 0))
     (def r2 (ref 100))
-    (alter r1 inc)                  => error!
+    (alter r1 inc)                ;; error! not in a transaction!
     (dosync 
-        (alter r1 inc)
-        (alter r2 dec))   
-                                   => @r1 is now 1, r2 is now 99
+        (alter r1 inc)            ;; inc is a function which increments its argument by 1
+        (alter r2 dec))           ;; dec does the opposite
+                                  ;; @r1 is now 1, r2 is now 99
     
-
-    r1 = Ref(0, None)
-    r2 = Ref(100, None)
-
-    def body():
-        r1.refSet(5)
-
-        def incr(val):
-            return val + 1
-        
-        r2.alter(incr, [])
-
-    LockingTransaction.runInTransaction(body)
-    r1.get() == 5
-    r2.get() == 101
-
 #### Transactions
 
 * Atomic to outside observers
@@ -66,17 +52,17 @@ Don't have to think about locking. Just write multithreaded code that modifies r
 
 ** diagram of classes and relationships in human-readable form **
 
+## Key hook for refs/STM
+
+can always *get* value of a ref with currentValue()---just get newest in history chain
+can only *set* a ref to something new with refSet/alter/commute---and they _check for a running transaction_
+
 ### Ref
 
 * tvals (history chain)
 * faults (atomic integer) => talk about atomics
 * lock (read write mutex) => talk about mutex & read write locks & recursive locks
 * tinfo => come  back to later
-
-## Key hook for refs/STM
-
-can always *get* value of a ref with currentValue()---just get newest in history chain
-can only *set* a ref to something new with refSet/alter/commute---and they _check for a running transaction_
 
 ### LockingTransaction
 
